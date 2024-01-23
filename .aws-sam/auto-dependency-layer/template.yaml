@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: exifProcessor
+Transform:
+- AWS::Serverless-2016-10-31
+Resources:
+  helloFromLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/hello-from-lambda.helloFromLambdaHandler
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A Lambda function that returns a static string.
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      CodeUri: helloFromLambdaFunction
+      Layers:
+      - Fn::GetAtt:
+        - AwsSamAutoDependencyLayerNestedStack
+        - Outputs.helloFromLambdaFunction8583c9baDepLayer
+    Metadata:
+      SamResourceId: helloFromLambdaFunction
+  AwsSamAutoDependencyLayerNestedStack:
+    DeletionPolicy: Delete
+    Metadata:
+      CreatedBy: AWS SAM CLI sync command
+    Properties:
+      TemplateURL: /Users/johan.velasquez/upc/TFM/repos/exifProcessor/.aws-sam/auto-dependency-layer/adl_nested_template.yaml
+    Type: AWS::CloudFormation::Stack
