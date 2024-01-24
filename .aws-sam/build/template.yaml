@@ -25,6 +25,12 @@ Resources:
           Resource:
           - arn:aws:s3:::images-tfm2/*
           - arn:aws:s3:::images-tfm2
+      Events:
+        ProcessExifEvent:
+          Type: Api
+          Properties:
+            Path: /processExif
+            Method: post
       CodeUri: helloFromLambdaFunction
     Metadata:
       SamResourceId: helloFromLambdaFunction

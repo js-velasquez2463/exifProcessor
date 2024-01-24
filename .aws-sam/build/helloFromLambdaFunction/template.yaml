@@ -42,6 +42,12 @@ Resources:
               Resource:
                 - "arn:aws:s3:::images-tfm2/*"
                 - "arn:aws:s3:::images-tfm2"
+      Events:
+        ProcessExifEvent:
+          Type: Api
+          Properties:
+            Path: /processExif
+            Method: post
 
   # Definir el bucket de S3 si es necesario
   S3Bucket:
