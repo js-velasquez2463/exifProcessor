@@ -6,7 +6,7 @@ Resources:
   helloFromLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/hello-from-lambda.helloFromLambdaHandler
+      Handler: src/handlers/exifHandler.helloFromLambdaHandler
       Runtime: nodejs18.x
       Architectures:
       - x86_64
@@ -34,7 +34,39 @@ Resources:
       CodeUri: helloFromLambdaFunction
     Metadata:
       SamResourceId: helloFromLambdaFunction
+  imageMetadataRemovalFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/exifHandler.deleteMetadataHandler
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A Lambda function that deletes the metadata of an image and upload
+        it in a new file.
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - S3ReadPolicy:
+          BucketName: images-tfm2
+      - S3WritePolicy:
+          BucketName:
+            Ref: S3Bucket
+      Events:
+        DeleteExifMetadataEvent:
+          Type: Api
+          Properties:
+            Path: /deleteExif
+            Method: post
+      CodeUri: imageMetadataRemovalFunction
+    Metadata:
+      SamResourceId: imageMetadataRemovalFunction
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: images-tfm2
+Outputs:
+  ExifRemovalApi:
+    Description: API Gateway endpoint URL for Prod stage
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/remove-metadata/
