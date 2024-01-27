@@ -22,7 +22,7 @@ Resources:
   helloFromLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/exifHandler.helloFromLambdaHandler
+      Handler: src/handlers/exifHandler.getMetadataHandler
       Runtime: nodejs18.x
       Architectures:
         - x86_64
@@ -63,7 +63,7 @@ Resources:
         # Give Lambda basic execution Permission to the helloFromLambda
         - AWSLambdaBasicExecutionRole
         - S3ReadPolicy: 
-            BucketName: "images-tfm2"
+            BucketName: !Ref S3Bucket
         - S3WritePolicy: 
             BucketName: !Ref S3Bucket
 
@@ -72,6 +72,61 @@ Resources:
           Type: Api
           Properties:
             Path: /deleteExif
+            Method: post
+
+  getImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/exifHandler.getImageHandler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A Lambda function that gets the signed image url to download
+      Policies:
+        # Give Lambda basic execution Permission to the helloFromLambda
+        - AWSLambdaBasicExecutionRole
+        - S3ReadPolicy: 
+            BucketName: !Ref S3Bucket
+        - S3WritePolicy: 
+            BucketName: !Ref S3Bucket
+      Events:
+        GetImageEvent:
+          Type: Api
+          Properties:
+            Path: /getImage
+            Method: post
+  
+  imageUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/exifHandler.uploadImageHandler  # Asegúrate de reemplazar 'tuArchivo' con el nombre real de tu archivo
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 's3:PutObject'
+              Resource:
+                - "arn:aws:s3:::images-tfm2/*"
+                - "arn:aws:s3:::images-tfm2"
+       # Give Lambda basic execution Permission to the helloFromLambda
+        - AWSLambdaBasicExecutionRole
+        - S3ReadPolicy: 
+            BucketName: !Ref S3Bucket
+        - S3WritePolicy: 
+            BucketName: !Ref S3Bucket
+      Events:
+        UploadImageEvent:
+          Type: Api
+          Properties:
+            Path: /uploadImage
             Method: post
 
   # Definir el bucket de S3 si es necesario

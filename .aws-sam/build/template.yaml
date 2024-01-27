@@ -6,7 +6,7 @@ Resources:
   helloFromLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/exifHandler.helloFromLambdaHandler
+      Handler: src/handlers/exifHandler.getMetadataHandler
       Runtime: nodejs18.x
       Architectures:
       - x86_64
@@ -48,7 +48,8 @@ Resources:
       Policies:
       - AWSLambdaBasicExecutionRole
       - S3ReadPolicy:
-          BucketName: images-tfm2
+          BucketName:
+            Ref: S3Bucket
       - S3WritePolicy:
           BucketName:
             Ref: S3Bucket
@@ -61,6 +62,67 @@ Resources:
       CodeUri: imageMetadataRemovalFunction
     Metadata:
       SamResourceId: imageMetadataRemovalFunction
+  getImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/exifHandler.getImageHandler
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A Lambda function that gets the signed image url to download
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - S3ReadPolicy:
+          BucketName:
+            Ref: S3Bucket
+      - S3WritePolicy:
+          BucketName:
+            Ref: S3Bucket
+      Events:
+        GetImageEvent:
+          Type: Api
+          Properties:
+            Path: /getImage
+            Method: post
+      CodeUri: getImageFunction
+    Metadata:
+      SamResourceId: getImageFunction
+  imageUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/exifHandler.uploadImageHandler
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:PutObject
+          Resource:
+          - arn:aws:s3:::images-tfm2/*
+          - arn:aws:s3:::images-tfm2
+      - AWSLambdaBasicExecutionRole
+      - S3ReadPolicy:
+          BucketName:
+            Ref: S3Bucket
+      - S3WritePolicy:
+          BucketName:
+            Ref: S3Bucket
+      Events:
+        UploadImageEvent:
+          Type: Api
+          Properties:
+            Path: /uploadImage
+            Method: post
+      CodeUri: imageUploadFunction
+    Metadata:
+      SamResourceId: imageUploadFunction
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:

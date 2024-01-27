@@ -13,7 +13,7 @@ export const getBase64DataFromJpegFile = async (bucketName, objectKey) => {
 
 
 //TODO: Seguir haciendo endpoint de eliminar metadata
-export function deleteMetadata() {
+export const deleteMetadata = () => {
     // Create a “scrubbed” copy of the original hotel photo and save it
     const hotelImageData = getBase64DataFromJpegFile('./images/hotel.jpg');
     const scrubbedHotelImageData = piexif.remove(hotelImageData);
@@ -25,7 +25,7 @@ export function deleteMetadata() {
 
 export const getExifFromJpegFile = async(bucketName, objectKey) => piexif.load(await getBase64DataFromJpegFile(bucketName, objectKey));
 
-function debugExif(exif) {
+export const debugExif = (exif) => {
      // Function to parse and return EXIF data
     const data = {};
     for (const ifd in exif) {

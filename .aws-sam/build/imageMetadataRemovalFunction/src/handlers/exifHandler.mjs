@@ -1,28 +1,25 @@
 import AWS from 'aws-sdk';
 import piexif from 'piexifjs';
-import { getExifFromJpegFile } from "../services/exifService.mjs"
+import { getExifFromJpegFile, debugExif, getBase64DataFromJpegFile } from "../services/exifService.mjs"
 
-const s3 = new AWS.S3();
+const s3 = new AWS.S3({
+    signatureVersion: 'v4'
+});
+const BUCKET_NAME = 'images-tfm2';
 
 /**
  * A Lambda function that extracts EXIF metadata from an image in S3
  */
-export const helloFromLambdaHandler = async (event) => {
-    // Assumes that the bucket and object keys are provided in the event
+export const getMetadataHandler = async (event) => {
 
     // Parsea el body del evento si está disponible
     const requestBody = event.body ? JSON.parse(event.body) : {};
 
-    console.log("Request:", event);
-
     const bucketName = requestBody.bucketName;
     const objectKey = requestBody.objectKey;
     try {
-       console.log("Request, ", getExifFromJpegFile);
        const exif = await getExifFromJpegFile(bucketName, objectKey);        
-        const exifData = debugExif(exif); // Make sure this function returns the data
-
-        console.info('Extracted EXIF here:', exif);
+        const exifData = debugExif(exif);
         console.info('Extracted EXIF data:', exifData);
 
         return {
@@ -31,7 +28,6 @@ export const helloFromLambdaHandler = async (event) => {
         };
     } catch (error) {
         console.error('Error processing image:', error);
-        //throw new Error(`Error processing image: ${error.message}`);
         return {
             statusCode: 500,
             body: JSON.stringify({ message: 'Error procesando la solicitud' }),
@@ -83,33 +79,64 @@ export const deleteMetadataHandler = async (event) => {
     }
 };
 
-const getBase64DataFromJpegFile = async (bucketName, objectKey) => {
-    const params = {
-        Bucket: bucketName,
-        Key: objectKey,
-    };
-    const data = await s3.getObject(params).promise();
-    return data.Body.toString('binary');
-}
+export const getImageHandler = async (event) => {
 
-//const getExifFromJpegFile = async(bucketName, objectKey) => piexif.load(await getBase64DataFromJpegFile(bucketName, objectKey));
+    // Parsea el body del evento si está disponible
+    const requestBody = event.body ? JSON.parse(event.body) : {};
 
-function debugExif(exif) {
-     // Function to parse and return EXIF data
-    const data = {};
-    for (const ifd in exif) {
-        if (ifd == 'thumbnail') {
-            const thumbnailData = exif[ifd] === null ? "null" : exif[ifd];
-            data['thumbnail'] = thumbnailData;
-            console.debug(`- thumbnail: ${thumbnailData}`);
-        } else {
-            console.debug(`- ${ifd}`);
-            for (const tag in exif[ifd]) {
-                data[piexif.TAGS[ifd][tag]['name']] = exif[ifd][tag];
-                console.debug(`    - ${piexif.TAGS[ifd][tag]['name']}: ${exif[ifd][tag]}`);
-            }
-        }
+    console.log("Request:", event);
+
+    const bucketName = requestBody.bucketName;
+    const objectKey = requestBody.objectKey;
+
+    try {
+        // Configura las opciones para obtener la URL firmada
+        const signedUrlExpireSeconds = 60 * 5; // URL válida por 5 minutos
+
+        // Obtiene la URL firmada
+        const url = s3.getSignedUrl('getObject', {
+            Bucket: bucketName,
+            Key: objectKey,
+            Expires: signedUrlExpireSeconds
+        });
+
+        // Devuelve la URL firmada
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ downloadUrl: url })
+        };
+    } catch (error) {
+        console.error('Error al generar la URL firmada: ', error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Error al generar la URL de descarga' })
+        };
     }
-    console.log("metadata: ", data);
-    return data;
-}
+};
+
+export const uploadImageHandler = async (event) => {
+    const bucketName = BUCKET_NAME; // Reemplaza con tu bucket de S3
+    const objectKey = event.queryStringParameters.key; // Clave del objeto (nombre del archivo) obtenida del query parameter
+    console.log('object keyy', objectKey)
+
+    try {
+        // Configura las opciones para obtener la URL firmada para subir
+        const url = s3.getSignedUrl('putObject', {
+            Bucket: bucketName,
+            Key: objectKey,
+            Expires: 600 // Tiempo en segundos antes de que la URL expire
+        });
+
+        // Devuelve la URL firmada
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ uploadUrl: url })
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Error al generar la URL de carga' })
+        };
+    }
+};
