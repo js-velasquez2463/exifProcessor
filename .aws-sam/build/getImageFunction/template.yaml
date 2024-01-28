@@ -12,6 +12,40 @@ Description: >-
 Transform:
 - AWS::Serverless-2016-10-31
 
+Parameters:
+  vpcStackName:
+    Default: rds-mysql-vpc
+    Description: VPC and database stack name
+    Type: String
+  secretName:
+    Default: rds-mysql-admin
+    Description: Database password secret name
+    Type: String
+  VpcId:
+    Type: String
+    Description: ID of the VPC
+    Default: vpc-0e8d3c6321c584886
+
+  SubnetIdOne:
+    Type: String
+    Description: ID of the first subnet
+    Default: subnet-06445f8d648dae8a3
+
+  SubnetIdTwo:
+    Type: String
+    Description: ID of the second subnet
+    Default: subnet-048491907c4aca4db
+
+  SecurityGroupIdOne:
+    Type: String
+    Description: ID of the first security group
+    Default: sg-04be949c633f462d1
+
+  SecurityGroupIdTwo:
+    Type: String
+    Description: ID of the second security group
+    Default: sg-0267e5dc92e0f3641
+
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
@@ -128,6 +162,80 @@ Resources:
           Properties:
             Path: /uploadImage
             Method: post
+  
+  createDatabaseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/databaseHandler.queryDatabaseHandler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Environment:
+          Variables:
+            RDS_HOSTNAME: proxy-1706438267879-tfm.proxy-cixbxlx3mnlm.us-east-1.rds.amazonaws.com
+            RDS_USERNAME: admin
+            RDS_PORT: 3306
+            RDS_DBNAME: exifms
+            RDS_PASSWORD: test
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 's3:PutObject'
+              Resource:
+                - "arn:aws:s3:::images-tfm2/*"
+                - "arn:aws:s3:::images-tfm2"
+       # Give Lambda basic execution Permission to the helloFromLambda
+        - AWSLambdaBasicExecutionRole
+        - S3ReadPolicy: 
+            BucketName: !Ref S3Bucket
+        - S3WritePolicy: 
+            BucketName: !Ref S3Bucket
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-04be949c633f462d1
+          - sg-0267e5dc92e0f3641
+        SubnetIds:
+          - subnet-06445f8d648dae8a3
+          - subnet-048491907c4aca4db
+      Role: !GetAtt role.Arn
+      Events:
+        UploadImageEvent:
+          Type: Api
+          Properties:
+            Path: /database/create
+            Method: post
+    
+  role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - PolicyName: rds-iamauth
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'rds-db:connect'
+                Resource: '*'
+      Path: /service-role/
 
   # Definir el bucket de S3 si es necesario
   S3Bucket:

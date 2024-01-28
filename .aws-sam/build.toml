@@ -5,8 +5,8 @@ codeuri = "/Users/johan.velasquez/upc/TFM/repos/exifProcessor"
 runtime = "nodejs18.x"
 architecture = "x86_64"
 handler = "src/index.helloFromLambdaHandler"
-manifest_hash = "be19605b206fe81c6f3671560aa3e5f5"
+manifest_hash = "08509aa097743d59b5cdc9175df750ed"
 packagetype = "Zip"
-functions = ["helloFromLambdaFunction", "imageMetadataRemovalFunction", "getImageFunction", "imageUploadFunction"]
+functions = ["helloFromLambdaFunction", "imageMetadataRemovalFunction", "getImageFunction", "imageUploadFunction", "createDatabaseFunction"]
 
 [layer_build_definitions]
