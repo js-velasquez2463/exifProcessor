@@ -163,7 +163,7 @@ Resources:
       Timeout: 100
       Environment:
         Variables:
-          RDS_HOSTNAME: proxy-1706438267879-tfm.proxy-cixbxlx3mnlm.us-east-1.rds.amazonaws.com
+          RDS_HOSTNAME: tfm.cixbxlx3mnlm.us-east-1.rds.amazonaws.com
           RDS_USERNAME: admin
           RDS_PORT: 3306
           RDS_DBNAME: exifms
@@ -204,6 +204,58 @@ Resources:
       CodeUri: createDatabaseFunction
     Metadata:
       SamResourceId: createDatabaseFunction
+  uploadS3ImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/databaseHandler.uploadImageS3Handler
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Environment:
+        Variables:
+          RDS_HOSTNAME: tfm.cixbxlx3mnlm.us-east-1.rds.amazonaws.com
+          RDS_USERNAME: admin
+          RDS_PORT: 3306
+          RDS_DBNAME: exifms
+          RDS_PASSWORD: test
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:PutObject
+          Resource:
+          - arn:aws:s3:::images-tfm2/*
+          - arn:aws:s3:::images-tfm2
+      - AWSLambdaBasicExecutionRole
+      - S3ReadPolicy:
+          BucketName:
+            Ref: S3Bucket
+      - S3WritePolicy:
+          BucketName:
+            Ref: S3Bucket
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-04be949c633f462d1
+        - sg-0267e5dc92e0f3641
+        SubnetIds:
+        - subnet-06445f8d648dae8a3
+        - subnet-048491907c4aca4db
+      Role:
+        Fn::GetAtt:
+        - role
+        - Arn
+      Events:
+        UploadS3ImageEvent:
+          Type: Api
+          Properties:
+            Path: /images/upload
+            Method: post
+      CodeUri: uploadS3ImageFunction
+    Metadata:
+      SamResourceId: uploadS3ImageFunction
   role:
     Type: AWS::IAM::Role
     Properties:

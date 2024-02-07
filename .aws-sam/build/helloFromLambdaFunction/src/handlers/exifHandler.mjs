@@ -1,6 +1,7 @@
 import AWS from 'aws-sdk';
 import piexif from 'piexifjs';
-import { getExifFromJpegFile, debugExif, getBase64DataFromJpegFile } from "../services/exifService.mjs"
+import { getExifFromJpegFile, getExifMetadata, getBase64DataFromJpegFile } from "../services/exifService.mjs"
+import { insertImage } from '../models/modelUtil.mjs';
 
 const s3 = new AWS.S3({
     signatureVersion: 'v4'
@@ -19,7 +20,7 @@ export const getMetadataHandler = async (event) => {
     const objectKey = requestBody.objectKey;
     try {
        const exif = await getExifFromJpegFile(bucketName, objectKey);        
-        const exifData = debugExif(exif);
+        const exifData = getExifMetadata(exif);
         console.info('Extracted EXIF data:', exifData);
 
         return {
@@ -47,7 +48,7 @@ export const deleteMetadataHandler = async (event) => {
 
     try {
        const exif = await getExifFromJpegFile(bucketName, objectKey);        
-        const exifData = debugExif(exif); // Make sure this function returns the data
+        const exifData = getExifMetadata(exif); // Make sure this function returns the data
 
         const image = await getBase64DataFromJpegFile(bucketName, objectKey)
         const scrubbedImageData = piexif.remove(image);

@@ -20,12 +20,14 @@ export const deleteMetadata = () => {
     fileBuffer = Buffer.from(scrubbedHotelImageData, 'binary');
     //fs.writeFileSync('./images/hotel scrubbed.jpg', fileBuffer);
 
-    debugExif(getExifFromJpegFile());
+    getExifMetadata(getExifFromJpegFile());
 }
 
 export const getExifFromJpegFile = async(bucketName, objectKey) => piexif.load(await getBase64DataFromJpegFile(bucketName, objectKey));
 
-export const debugExif = (exif) => {
+export const getMetadataFromS3File = async (bucketName, objectKey) => getExifMetadata(await getExifFromJpegFile(bucketName, objectKey));
+
+export const getExifMetadata = (exif) => {
      // Function to parse and return EXIF data
     const data = {};
     for (const ifd in exif) {
