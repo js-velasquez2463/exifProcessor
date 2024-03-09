@@ -1,7 +1,8 @@
 import AWS from 'aws-sdk';
 import mysql from 'mysql';
 import { getMetadataFromS3File } from "../services/exifService.mjs"
-import { insertImage } from '../models/modelUtil.mjs';
+import { saveImageMetadata } from '../models/modelUtil.mjs';
+import { getStringifyResponse } from '../services/responseService.mjs';
 
 const s3 = new AWS.S3({
     signatureVersion: 'v4'
@@ -46,16 +47,16 @@ export const queryDatabaseHandler = async (event) => {
 
         const sqlQuery = requestBody.query;
         const result = await runQuery(sqlQuery);
-        return {
+        return getStringifyResponse({
             statusCode: 200,
-            body: JSON.stringify({ message: 'Query executed successfully', result })
-        };
+            body: { message: 'Query executed successfully', result }
+        });
     } catch (error) {
         console.error('Error executing query: ', error);
-        return {
+        return getStringifyResponse({
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error executing query' })
-        };
+            body: { error: 'Error executing query' }
+        });
     }
 };
 
@@ -69,17 +70,17 @@ export const uploadImageS3Handler = async (event) => {
         const objectKey = requestBody.objectKey;
 
         const metadata = await getMetadataFromS3File(BUCKET_NAME, objectKey);
-        const result = await insertImage(objectKey, 'test12345', metadata);
+        const result = await saveImageMetadata(objectKey, 'test12345', metadata);
         console.log('Consiguio el exif')
-        return {
+        return getStringifyResponse({
             statusCode: 200,
-            body: JSON.stringify({ message: 'Query executed successfully', result })
-        };
+            body: { message: 'Query executed successfully', result }
+        });
     } catch (error) {
         console.error('Error executing query: ', error);
-        return {
+        return getStringifyResponse({
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error executing query' })
-        };
+            body: { error: 'Error executing query' }
+        });
     }
 };

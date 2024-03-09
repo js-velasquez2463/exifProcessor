@@ -1,6 +1,7 @@
 import AWS from 'aws-sdk';
 import piexif from 'piexifjs';
 import { getExifFromJpegFile, getExifMetadata, getBase64DataFromJpegFile } from "../services/exifService.mjs"
+import { getStringifyResponse } from '../services/responseService.mjs';
 import { saveImageMetadata } from '../models/modelUtil.mjs';
 
 const s3 = new AWS.S3({
@@ -23,16 +24,16 @@ export const getMetadataHandler = async (event) => {
         const exifData = getExifMetadata(exif);
         console.info('Extracted EXIF data:', exifData);
 
-        return {
+        return getStringifyResponse({
             statusCode: 200,
-            body: JSON.stringify({ message: 'Procesado correctamente', data: exifData }),
-        };
+            body: { message: 'Procesado correctamente', data: exifData },
+        });
     } catch (error) {
         console.error('Error processing image:', error);
-        return {
+        return getStringifyResponse({
             statusCode: 500,
-            body: JSON.stringify({ message: 'Error procesando la solicitud' }),
-        };
+            body: { message: 'Error procesando la solicitud' },
+        });
     }
 };
 
@@ -66,17 +67,17 @@ export const deleteMetadataHandler = async (event) => {
             ContentType: 'image/jpeg',
         }).promise();
 
-        return { 
+        return getStringifyResponse({
             statusCode: 200, 
-            body: JSON.stringify({ message: 'Imagen procesada correctamente' }) 
-        };
+            body: { message: 'Imagen procesada correctamente' } 
+        });
 
     } catch (error) {
         console.error('Error deleting image metadata:', error);
-        return {
+        return getStringifyResponse({
             statusCode: 500,
-            body: JSON.stringify({ message: 'Error procesando la solicitud' }),
-        };
+            body: { message: 'Error procesando la solicitud' },
+        });
     }
 };
 
@@ -102,16 +103,17 @@ export const getImageHandler = async (event) => {
         });
 
         // Devuelve la URL firmada
-        return {
+        const response =  getStringifyResponse({
             statusCode: 200,
-            body: JSON.stringify({ downloadUrl: url })
-        };
+            body: { downloadUrl: url }
+        })
+        return response;
     } catch (error) {
         console.error('Error al generar la URL firmada: ', error);
-        return {
+        return getStringifyResponse({
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error al generar la URL de descarga' })
-        };
+            body: { error: 'Error al generar la URL de descarga' }
+        });
     }
 };
 
@@ -129,15 +131,15 @@ export const uploadImageHandler = async (event) => {
         });
 
         // Devuelve la URL firmada
-        return {
+        return getStringifyResponse({
             statusCode: 200,
-            body: JSON.stringify({ uploadUrl: url })
-        };
+            body: { uploadUrl: url }
+        });
     } catch (error) {
         console.error(error);
-        return {
+        return getStringifyResponse({
             statusCode: 500,
-            body: JSON.stringify({ message: 'Error al generar la URL de carga' })
-        };
+            body: { message: 'Error al generar la URL de carga' }
+        });
     }
 };

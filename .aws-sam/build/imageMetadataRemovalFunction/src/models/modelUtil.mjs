@@ -9,7 +9,7 @@ const connection = mysql.createConnection({
     database: process.env.RDS_DBNAME
 });
 
-export const insertImage = async (imageName, userId, metadata) => {
+export const saveImageMetadata = async (imageName, userId, metadata) => {
     // Guardar la información en la base de datos
     const query = 'INSERT INTO images (image_name, user_id, s3_url, user_metadata) VALUES (?, ?, ?, ?)';
     const s3Url = `https://${BUCKET_NAME}.s3.amazonaws.com/${imageName}`;

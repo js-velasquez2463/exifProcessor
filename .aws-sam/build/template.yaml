@@ -31,6 +31,18 @@ Parameters:
     Type: String
     Description: ID of the second security group
     Default: sg-0267e5dc92e0f3641
+Globals:
+  Function:
+    Runtime: nodejs18.x
+    Timeout: 100
+    Environment:
+      Variables:
+        TABLE_NAME: data-table
+  Api:
+    Cors:
+      AllowMethods: '''GET,POST,OPTIONS'''
+      AllowHeaders: '''content-type'''
+      AllowOrigin: '''*'''
 Resources:
   helloFromLambdaFunction:
     Type: AWS::Serverless::Function
