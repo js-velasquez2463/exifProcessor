@@ -34,10 +34,24 @@ Parameters:
 Globals:
   Function:
     Runtime: nodejs18.x
+    Architectures:
+    - x86_64
+    MemorySize: 128
     Timeout: 100
     Environment:
       Variables:
-        TABLE_NAME: data-table
+        RDS_HOSTNAME: tfm.cixbxlx3mnlm.us-east-1.rds.amazonaws.com
+        RDS_USERNAME: admin
+        RDS_PORT: '3306'
+        RDS_DBNAME: exifms
+        RDS_PASSWORD: k6_gjqq{K}nzXgbl{?KNM9]G.$rB
+    VpcConfig:
+      SecurityGroupIds:
+      - sg-04be949c633f462d1
+      - sg-0267e5dc92e0f3641
+      SubnetIds:
+      - subnet-06445f8d648dae8a3
+      - subnet-048491907c4aca4db
   Api:
     Cors:
       AllowMethods: '''GET,POST,OPTIONS'''
@@ -48,11 +62,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/exifHandler.getMetadataHandler
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
       Description: A Lambda function that returns a static string.
       Policies:
       - AWSLambdaBasicExecutionRole
@@ -79,11 +88,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/exifHandler.deleteMetadataHandler
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
       Description: A Lambda function that deletes the metadata of an image and upload
         it in a new file.
       Policies:
@@ -107,11 +111,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/exifHandler.getImageHandler
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
       Description: A Lambda function that gets the signed image url to download
       Policies:
       - AWSLambdaBasicExecutionRole
@@ -134,11 +133,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/exifHandler.uploadImageHandler
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
       Policies:
       - Version: '2012-10-17'
         Statement:
@@ -164,15 +158,10 @@ Resources:
       CodeUri: imageUploadFunction
     Metadata:
       SamResourceId: imageUploadFunction
-  createDatabaseFunction:
+  queryDatabaseFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/databaseHandler.queryDatabaseHandler
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
       Environment:
         Variables:
           RDS_HOSTNAME: tfm.cixbxlx3mnlm.us-east-1.rds.amazonaws.com
@@ -211,27 +200,19 @@ Resources:
         UploadImageEvent:
           Type: Api
           Properties:
-            Path: /database/create
+            Path: /database/query
             Method: post
-      CodeUri: createDatabaseFunction
+      CodeUri: queryDatabaseFunction
     Metadata:
-      SamResourceId: createDatabaseFunction
-  uploadS3ImageFunction:
+      SamResourceId: queryDatabaseFunction
+  createImageS3Function:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/databaseHandler.uploadImageS3Handler
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Environment:
-        Variables:
-          RDS_HOSTNAME: tfm.cixbxlx3mnlm.us-east-1.rds.amazonaws.com
-          RDS_USERNAME: admin
-          RDS_PORT: 3306
-          RDS_DBNAME: exifms
-          RDS_PASSWORD: test
+      Handler: src/handlers/databaseHandler.createImageS3Handler
+      Role:
+        Fn::GetAtt:
+        - role
+        - Arn
       Policies:
       - Version: '2012-10-17'
         Statement:
@@ -248,26 +229,15 @@ Resources:
       - S3WritePolicy:
           BucketName:
             Ref: S3Bucket
-      VpcConfig:
-        SecurityGroupIds:
-        - sg-04be949c633f462d1
-        - sg-0267e5dc92e0f3641
-        SubnetIds:
-        - subnet-06445f8d648dae8a3
-        - subnet-048491907c4aca4db
-      Role:
-        Fn::GetAtt:
-        - role
-        - Arn
       Events:
         UploadS3ImageEvent:
           Type: Api
           Properties:
-            Path: /images/upload
+            Path: /images/create
             Method: post
-      CodeUri: uploadS3ImageFunction
+      CodeUri: createImageS3Function
     Metadata:
-      SamResourceId: uploadS3ImageFunction
+      SamResourceId: createImageS3Function
   role:
     Type: AWS::IAM::Role
     Properties:

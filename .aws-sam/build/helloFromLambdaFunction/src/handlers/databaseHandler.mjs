@@ -1,7 +1,7 @@
 import AWS from 'aws-sdk';
 import mysql from 'mysql';
 import { getMetadataFromS3File } from "../services/exifService.mjs"
-import { saveImageMetadata } from '../models/modelUtil.mjs';
+import { saveImageMetadata, createImage } from '../models/modelUtil.mjs';
 import { getStringifyResponse } from '../services/responseService.mjs';
 
 const s3 = new AWS.S3({
@@ -60,7 +60,7 @@ export const queryDatabaseHandler = async (event) => {
     }
 };
 
-export const uploadImageS3Handler = async (event) => {
+export const processImageMetadataHandler = async (event) => {
     try {
         // Asumiendo que el evento es un string JSON con un campo "query"
         const requestBody = event.body ? JSON.parse(event.body) : {};
@@ -71,6 +71,28 @@ export const uploadImageS3Handler = async (event) => {
 
         const metadata = await getMetadataFromS3File(BUCKET_NAME, objectKey);
         const result = await saveImageMetadata(objectKey, 'test12345', metadata);
+        console.log('Consiguio el exif')
+        return getStringifyResponse({
+            statusCode: 200,
+            body: { message: 'Query executed successfully', result }
+        });
+    } catch (error) {
+        console.error('Error executing query: ', error);
+        return getStringifyResponse({
+            statusCode: 500,
+            body: { error: 'Error executing query' }
+        });
+    }
+};
+
+export const createImageS3Handler = async (event) => {
+    try {
+        // Asumiendo que el evento es un string JSON con un campo "query"
+        const requestBody = event.body ? JSON.parse(event.body) : {};
+
+        console.log("Request:", requestBody);
+        const objectKey = requestBody.objectKey;
+        const result = await createImage(objectKey, 'user_1');
         console.log('Consiguio el exif')
         return getStringifyResponse({
             statusCode: 200,

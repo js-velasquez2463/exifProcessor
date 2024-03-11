@@ -49,10 +49,25 @@ Parameters:
 Globals:
   Function:
     Runtime: nodejs18.x
+    Architectures:
+      - x86_64
+    MemorySize: 128
     Timeout: 100
     Environment:
       Variables:
-        TABLE_NAME: data-table
+        RDS_HOSTNAME: tfm.cixbxlx3mnlm.us-east-1.rds.amazonaws.com
+        RDS_USERNAME: admin
+        RDS_PORT: '3306' # Las variables de entorno son strings, asegúrate de que los números estén entre comillas
+        RDS_DBNAME: exifms
+        RDS_PASSWORD: k6_gjqq{K}nzXgbl{?KNM9]G.$rB
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-04be949c633f462d1
+        - sg-0267e5dc92e0f3641
+      SubnetIds:
+        - subnet-06445f8d648dae8a3
+        - subnet-048491907c4aca4db
+
   Api:
     Cors:
       AllowMethods: "'GET,POST,OPTIONS'"
@@ -71,11 +86,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/exifHandler.getMetadataHandler
-      Runtime: nodejs18.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
       Description: A Lambda function that returns a static string.
       Policies:
         # Give Lambda basic execution Permission to the helloFromLambda
@@ -101,11 +111,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/exifHandler.deleteMetadataHandler
-      Runtime: nodejs18.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
       Description: A Lambda function that deletes the metadata of an image and upload it in a new file.
       Policies:
         # Give Lambda basic execution Permission to the helloFromLambda
@@ -126,11 +131,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/exifHandler.getImageHandler
-      Runtime: nodejs18.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
       Description: A Lambda function that gets the signed image url to download
       Policies:
         # Give Lambda basic execution Permission to the helloFromLambda
@@ -150,11 +150,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/exifHandler.uploadImageHandler  # Asegúrate de reemplazar 'tuArchivo' con el nombre real de tu archivo
-      Runtime: nodejs18.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -177,15 +172,10 @@ Resources:
             Path: /uploadImage
             Method: post
   
-  createDatabaseFunction:
+  queryDatabaseFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/databaseHandler.queryDatabaseHandler
-      Runtime: nodejs18.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
       Environment:
           Variables:
             RDS_HOSTNAME: tfm.cixbxlx3mnlm.us-east-1.rds.amazonaws.com
@@ -220,53 +210,33 @@ Resources:
         UploadImageEvent:
           Type: Api
           Properties:
-            Path: /database/create
+            Path: /database/query
             Method: post
 
-  uploadS3ImageFunction:
+  createImageS3Function:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/databaseHandler.uploadImageS3Handler
-      Runtime: nodejs18.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Environment:
-          Variables:
-            RDS_HOSTNAME: tfm.cixbxlx3mnlm.us-east-1.rds.amazonaws.com
-            RDS_USERNAME: admin
-            RDS_PORT: 3306
-            RDS_DBNAME: exifms
-            RDS_PASSWORD: test
-      Policies:
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - 's3:PutObject'
-              Resource:
-                - "arn:aws:s3:::images-tfm2/*"
-                - "arn:aws:s3:::images-tfm2"
-       # Give Lambda basic execution Permission to the helloFromLambda
-        - AWSLambdaBasicExecutionRole
-        - S3ReadPolicy: 
-            BucketName: !Ref S3Bucket
-        - S3WritePolicy: 
-            BucketName: !Ref S3Bucket
-      VpcConfig:
-        SecurityGroupIds:
-          - sg-04be949c633f462d1
-          - sg-0267e5dc92e0f3641
-        SubnetIds:
-          - subnet-06445f8d648dae8a3
-          - subnet-048491907c4aca4db
+      Handler: src/handlers/databaseHandler.createImageS3Handler
       Role: !GetAtt role.Arn
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+            Resource:
+              - 'arn:aws:s3:::images-tfm2/*'
+              - 'arn:aws:s3:::images-tfm2'
+      - AWSLambdaBasicExecutionRole
+      - S3ReadPolicy: 
+          BucketName: !Ref S3Bucket
+      - S3WritePolicy: 
+          BucketName: !Ref S3Bucket
       Events:
         UploadS3ImageEvent:
           Type: Api
           Properties:
-            Path: /images/upload
+            Path: /images/create
             Method: post
     
   role:

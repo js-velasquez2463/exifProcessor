@@ -107,7 +107,6 @@ export const getImageHandler = async (event) => {
             statusCode: 200,
             body: { downloadUrl: url }
         })
-        console.log('respuestaan', response);
         return response;
     } catch (error) {
         console.error('Error al generar la URL firmada: ', error);
