@@ -60,6 +60,7 @@ Globals:
         RDS_PORT: '3306' # Las variables de entorno son strings, asegúrate de que los números estén entre comillas
         RDS_DBNAME: exifms
         RDS_PASSWORD: k6_gjqq{K}nzXgbl{?KNM9]G.$rB
+        ENCRYPTION_KEY: 86b2f53b7dbc8d1f35c616cd7441cc274bea23e63756e200dbf539aa664ecd7d
     VpcConfig:
       SecurityGroupIds:
         - sg-04be949c633f462d1
@@ -82,24 +83,26 @@ Resources:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
   # This is a Lambda function config associated with the source code: hello-from-lambda.js
-  helloFromLambdaFunction:
+  processExifFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/exifHandler.getMetadataHandler
+      Handler: src/handlers/databaseHandler.processImageMetadataHandler
       Description: A Lambda function that returns a static string.
       Policies:
-        # Give Lambda basic execution Permission to the helloFromLambda
-        - AWSLambdaBasicExecutionRole
-        - S3ReadPolicy: 
-            BucketName: "images-tfm2"
-        - Statement:
-            - Effect: "Allow"
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
               Action:
-                - "s3:GetObject"
-                - "s3:ListBucket"
+                - 's3:PutObject'
               Resource:
                 - "arn:aws:s3:::images-tfm2/*"
                 - "arn:aws:s3:::images-tfm2"
+       # Give Lambda basic execution Permission to the helloFromLambda
+        - AWSLambdaBasicExecutionRole
+        - S3ReadPolicy: 
+            BucketName: !Ref S3Bucket
+        - S3WritePolicy: 
+            BucketName: !Ref S3Bucket
       Events:
         ProcessExifEvent:
           Type: Api
@@ -238,6 +241,60 @@ Resources:
           Properties:
             Path: /images/create
             Method: post
+  
+  encryptImageMetadataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/databaseHandler.encryptImageMetadataHandler
+      Description: A Lambda function that returns a static string.
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 's3:PutObject'
+              Resource:
+                - "arn:aws:s3:::images-tfm2/*"
+                - "arn:aws:s3:::images-tfm2"
+       # Give Lambda basic execution Permission to the helloFromLambda
+        - AWSLambdaBasicExecutionRole
+        - S3ReadPolicy: 
+            BucketName: !Ref S3Bucket
+        - S3WritePolicy: 
+            BucketName: !Ref S3Bucket
+      Events:
+        ProcessExifEvent:
+          Type: Api
+          Properties:
+            Path: /encryptMetadata
+            Method: post
+  
+  getImagesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/databaseHandler.getImagesHandler
+      Description: A Lambda function that returns all images data.
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 's3:PutObject'
+              Resource:
+                - "arn:aws:s3:::images-tfm2/*"
+                - "arn:aws:s3:::images-tfm2"
+       # Give Lambda basic execution Permission to the helloFromLambda
+        - AWSLambdaBasicExecutionRole
+        - S3ReadPolicy: 
+            BucketName: !Ref S3Bucket
+        - S3WritePolicy: 
+            BucketName: !Ref S3Bucket
+      Events:
+        ProcessExifEvent:
+          Type: Api
+          Properties:
+            Path: /getImages
+            Method: get
     
   role:
     Type: AWS::IAM::Role

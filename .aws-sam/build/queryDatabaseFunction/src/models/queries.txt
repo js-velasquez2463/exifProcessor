@@ -1,0 +1,2 @@
+"query": "SELECT * FROM images;"
+"query": "ALTER TABLE images ADD COLUMN encrypted_metadata JSON, ADD COLUMN has_jumbf BOOLEAN DEFAULT FALSE;"
