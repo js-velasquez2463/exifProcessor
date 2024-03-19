@@ -5,8 +5,8 @@ codeuri = "/Users/johan.velasquez/upc/TFM/repos/exifProcessor"
 runtime = "nodejs18.x"
 architecture = "x86_64"
 handler = "src/index.helloFromLambdaHandler"
-manifest_hash = "08509aa097743d59b5cdc9175df750ed"
+manifest_hash = "b981e9e56c4627acd707d9efee2a480f"
 packagetype = "Zip"
-functions = ["processExifFunction", "imageMetadataRemovalFunction", "getImageFunction", "imageUploadFunction", "queryDatabaseFunction", "createImageS3Function", "encryptImageMetadataFunction", "getImagesFunction"]
+functions = ["loginFunction2", "processExifFunction", "imageMetadataRemovalFunction", "getImageFunction", "imageUploadFunction", "queryDatabaseFunction", "createImageS3Function", "encryptImageMetadataFunction", "getImagesFunction"]
 
 [layer_build_definitions]

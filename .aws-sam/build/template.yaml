@@ -59,6 +59,96 @@ Globals:
       AllowHeaders: '''content-type'''
       AllowOrigin: '''*'''
 Resources:
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: MyAPI
+      StageName: prod
+      Auth:
+        DefaultAuthorizer: MyCognitoAuthorizer
+        Authorizers:
+          MyCognitoAuthorizer:
+            Type: COGNITO_USER_POOLS
+            UserPoolArn:
+              Fn::GetAtt:
+              - CognitoUserPool
+              - Arn
+      Cors:
+        AllowMethods: '''POST,OPTIONS'''
+        AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'''
+        AllowOrigin: '''*'''
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: exifProcessorUserPool
+      Schema:
+      - Name: email
+        Required: true
+        Mutable: false
+        AttributeDataType: String
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      AutoVerifiedAttributes:
+      - email
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId:
+        Ref: CognitoUserPool
+      ClientName: exifProcessorAppClient
+      GenerateSecret: false
+      ExplicitAuthFlows:
+      - ALLOW_USER_SRP_AUTH
+      - ALLOW_REFRESH_TOKEN_AUTH
+      - ALLOW_USER_PASSWORD_AUTH
+  CognitoApiGatewayAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: CognitoAuthorizer
+      Type: COGNITO_USER_POOLS
+      IdentitySource: method.request.header.Authorization
+      RestApiId: q8onxhk818
+      ProviderARNs:
+      - Fn::GetAtt:
+        - CognitoUserPool
+        - Arn
+  loginFunction2:
+    Type: AWS::Serverless::Function
+    Properties:
+      VpcConfig:
+        SecurityGroupIds: []
+        SubnetIds: []
+      Handler: src/handlers/databaseHandler.loginHandler
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - cognito-idp:AdminInitiateAuth
+          - cognito-idp:AdminCreateUser
+          - cognito-idp:AdminSetUserPassword
+          - cognito-idp:InitiateAuth
+          - cognito-idp:RespondToAuthChallenge
+          Resource: '*'
+      - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          YOUR_CLIENT_ID: YOUR_CLIENT_ID_VALUE
+          YOUR_SECRET_KEY: YOUR_SECRET_KEY_VALUE
+      Events:
+        LoginApi:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: post
+      CodeUri: loginFunction2
+    Metadata:
+      SamResourceId: loginFunction2
   processExifFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -131,6 +221,10 @@ Resources:
           Properties:
             Path: /getImage
             Method: post
+            RestApiId:
+              Ref: MyApi
+            Auth:
+              Authorizer: MyCognitoAuthorizer
       CodeUri: getImageFunction
     Metadata:
       SamResourceId: getImageFunction
