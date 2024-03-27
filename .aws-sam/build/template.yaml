@@ -56,7 +56,7 @@ Globals:
   Api:
     Cors:
       AllowMethods: '''GET,POST,OPTIONS'''
-      AllowHeaders: '''content-type'''
+      AllowHeaders: '''content-type,Authorization'''
       AllowOrigin: '''*'''
 Resources:
   MyApi:
@@ -64,6 +64,10 @@ Resources:
     Properties:
       Name: MyAPI
       StageName: prod
+      Cors:
+        AllowMethods: '''OPTIONS,POST'''
+        AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'''
+        AllowOrigin: '''*'''
       Auth:
         DefaultAuthorizer: MyCognitoAuthorizer
         Authorizers:
@@ -73,10 +77,8 @@ Resources:
               Fn::GetAtt:
               - CognitoUserPool
               - Arn
-      Cors:
-        AllowMethods: '''POST,OPTIONS'''
-        AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'''
-        AllowOrigin: '''*'''
+        AddDefaultAuthorizerToCorsPreflight: false
+        ApiKeyRequired: false
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:

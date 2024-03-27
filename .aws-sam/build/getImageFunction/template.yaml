@@ -72,7 +72,7 @@ Globals:
   Api:
     Cors:
       AllowMethods: "'GET,POST,OPTIONS'"
-      AllowHeaders: "'content-type'"
+      AllowHeaders: "'content-type,Authorization'"
       AllowOrigin: "'*'"
       # AllowCredentials: true  Uncomment only if you choose a specific origin instead of the * wildcard.
 
@@ -86,16 +86,18 @@ Resources:
     Properties:
       Name: MyAPI
       StageName: prod
+      Cors:
+        AllowMethods: "'OPTIONS,POST'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
       Auth:
         DefaultAuthorizer: MyCognitoAuthorizer
         Authorizers:
           MyCognitoAuthorizer:
             Type: COGNITO_USER_POOLS
             UserPoolArn: !GetAtt CognitoUserPool.Arn
-      Cors:
-        AllowMethods: "'POST,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
+        AddDefaultAuthorizerToCorsPreflight: false
+        ApiKeyRequired: false
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool

@@ -102,11 +102,10 @@ export const getImageHandler = async (event) => {
             Expires: signedUrlExpireSeconds
         });
 
-        // Devuelve la URL firmada
         const response =  getStringifyResponse({
             statusCode: 200,
             body: { downloadUrl: url }
-        })
+        }, true);
         return response;
     } catch (error) {
         console.error('Error al generar la URL firmada: ', error);

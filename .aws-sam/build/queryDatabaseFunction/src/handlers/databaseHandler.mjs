@@ -198,10 +198,10 @@ export const loginHandler = async (event) => {
         const jwtToken = await authenticateUser(username, password);
 
         // Retornar el token JWT en la respuesta
-        return {
+        return getStringifyResponse({
             statusCode: 200,
-            body: JSON.stringify({ token: jwtToken })
-        };
+            body: { token: jwtToken }
+        });
     } catch (error) {
         console.error('Error during login:', error);
         return {
