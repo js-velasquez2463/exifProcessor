@@ -285,9 +285,10 @@ export const processImageMetadataHandler = async (event) => {
         console.log("Request:", requestBody);
 
         const objectKey = requestBody.objectKey;
+        const userId = requestBody.userId;
 
         const metadata = await getMetadataFromS3File(BUCKET_NAME, objectKey);
-        const result = await updateImageMetadata(objectKey, 1, {metadata});
+        const result = await updateImageMetadata(objectKey, userId, {metadata});
         console.log('Consiguio el exif')
         return getStringifyResponse({
             statusCode: 200,
@@ -309,8 +310,8 @@ export const encryptImageMetadataHandler = async (event) => {
 
         const objectKey = requestBody.objectKey;
         const encryptionKey = process.env.ENCRYPTION_KEY;
+        const userId = requestBody.userId;
         
-        //const encryptionKey = randomBytes(32).toString('hex');
         console.log('Encryption Key:', encryptionKey);
 
         const metadata = await getMetadataFromS3File(BUCKET_NAME, objectKey);
@@ -318,7 +319,7 @@ export const encryptImageMetadataHandler = async (event) => {
         // Encripta la metadata
         const encryptedMetadata = encryptText(JSON.stringify(metadata), encryptionKey);
 
-        const result = await updateImageEncryptedMetadata(objectKey, 1, { metadata: encryptedMetadata });
+        const result = await updateImageEncryptedMetadata(objectKey, userId, { metadata: encryptedMetadata });
         console.log('Metadata obtenida y encriptada');
         
         return getStringifyResponse({
@@ -341,7 +342,7 @@ export const createImageS3Handler = async (event) => {
 
         console.log("Request:", requestBody);
         const objectKey = requestBody.objectKey;
-        const result = await createImage(objectKey, 1);
+        const result = await createImage(objectKey, requestBody.userId);
         console.log('Consiguio el exif')
         return getStringifyResponse({
             statusCode: 200,
